@@ -107,6 +107,32 @@ def main() -> None:
     # Genre : variable catégorielle
     df_patients["gender"] = df_patients["gender"].astype("category")
 
+    # ============================================================
+    # Justification des types – table patients
+    # ============================================================
+
+    # patient_id -> string
+    # Le champ `patient_id` est un identifiant technique.
+    # Il n’est pas destiné à des calculs numériques mais à des comparaisons
+    # et des jointures. Le type `string` permet de conserver l’intégrité
+    # de l’identifiant (y compris d’éventuels zéros ou caractères
+    # alphanumériques) et garantit une jointure fiable avec la table
+    # `consultations`.
+
+    # birth_date -> datetime
+    # La date de naissance est convertie en `datetime` afin de permettre
+    # des traitements temporels cohérents (comparaisons de dates,
+    # calculs d’âge, contrôles de validité). Le typage explicite permet
+    # également de détecter et neutraliser les valeurs invalides lors
+    # du parsing.
+
+    # gender -> category
+    # La variable `gender` possède un nombre limité de modalités connues.
+    # Le type `category` est donc adapté, car il améliore la lisibilité
+    # sémantique de la variable et permet une optimisation mémoire par
+    # rapport à un type texte classique.
+
+
     # --- Consultations
     
     # Nettoyage des valeurs non-signifiantes
@@ -114,7 +140,7 @@ def main() -> None:
     df_consultations["consultation_id"] = (
         df_consultations["consultation_id"]
         .str.strip()         # supprime les espaces
-        .replace("", np.nan) # remplace les chaînes vides par NaN
+        .replace("", np.nan)
     )
 
     df_consultations["date_consultation"] = df_consultations["date_consultation"].replace(
@@ -139,6 +165,34 @@ def main() -> None:
     # Diagnostic : variable catégorielle
     df_consultations["diagnostic"] = df_consultations["diagnostic"].astype("category")
 
+    # ============================================================
+    # Justification des types – table consultations
+    # ============================================================
+
+    # consultation_id -> string
+    # Le champ `consultation_id` est un identifiant unique de consultation.
+    # Il est typé en `string` car il s’agit d’un identifiant métier,
+    # non numérique, utilisé uniquement pour l’identification et non
+    # pour des opérations arithmétiques.
+
+    # patient_id -> string
+    # Le champ `patient_id` est utilisé comme clé de jointure avec la table
+    # `patients`. Il est typé en `string` pour assurer la cohérence de type
+    # entre les deux tables et éviter tout problème de jointure lié à des
+    # conversions implicites.
+
+    # date_consultation -> datetime
+    # La date de consultation est convertie en `datetime` afin de permettre
+    # l’extraction d’informations temporelles (mois, année) nécessaires
+    # à l’analyse. Ce typage explicite garantit également une interprétation
+    # correcte du format de date et l’exclusion des valeurs invalides.
+
+    # diagnostic -> category
+    # Le champ `diagnostic` correspond à un ensemble restreint de statuts
+    # ou de libellés. Le type `category` est approprié pour représenter
+    # ce type de variable qualitative et facilite les analyses descriptives
+    # ultérieures.
+
     logging.info("Nettoyage et typage terminés")
 
     # ============================================================
@@ -157,10 +211,14 @@ def main() -> None:
     # Indicateur de validité
     df_joined["patient_valide"] = df_joined["_merge"] == "both"
 
-    # Extraire le mois de consultations
-    df_joined["mois_consultation"] = (
-        df_joined["date_consultation"].dt.to_period("M").astype(str)
-    )
+    # Extraire le mois (sans convertir en string)
+    df_joined["mois_consultation"] = df_joined["date_consultation"].dt.to_period("M")
+
+    # Supprimer les consultations sans mois valide
+    df_joined = df_joined.dropna(subset=["mois_consultation"])
+
+    # Conversion finale en string (pour affichage / export)
+    df_joined["mois_consultation"] = df_joined["mois_consultation"].astype(str)
 
     # Calculer la proportion par mois 
     resultat = (
