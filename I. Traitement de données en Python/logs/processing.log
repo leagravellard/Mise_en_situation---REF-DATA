@@ -1,0 +1,12 @@
+2026-02-07 11:20:31,019 | INFO | ===== DÉBUT DU TRAITEMENT =====
+2026-02-07 11:20:31,020 | INFO | Étape 1 - Lecture des fichiers CSV
+2026-02-07 11:20:31,039 | INFO | Lecture OK | patients=105 lignes | consultations=205 lignes
+2026-02-07 11:20:31,039 | INFO | Étape 2 - Nettoyage et typage explicite
+2026-02-07 11:20:31,040 | INFO | Colonnes patients: ['patient_id', 'birth_date', 'gender']
+2026-02-07 11:20:31,040 | INFO | Colonnes consultations: ['consultation_id', 'patient_id', 'date_consultation', 'diagnostic']
+2026-02-07 11:20:31,063 | INFO | Nettoyage et typage terminés
+2026-02-07 11:20:31,064 | INFO | Étape 3 - Jointure et analyse
+2026-02-07 11:20:31,085 | INFO | Analyse terminée | 18 lignes produites
+2026-02-07 11:20:31,086 | INFO | Étape 4 - Sauvegarde au format Parquet
+2026-02-07 11:20:31,183 | INFO | Sauvegarde terminée
+2026-02-07 11:20:31,183 | INFO | ===== FIN DU TRAITEMENT (SUCCESS) =====
