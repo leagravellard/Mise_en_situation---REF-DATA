@@ -12,6 +12,7 @@ Mise en situation – Traitement de données en Python
 from pathlib import Path
 import logging
 import pandas as pd
+import numpy as np
 
 
 def setup_logging(log_path: Path) -> None:
@@ -78,24 +79,64 @@ def main() -> None:
     logging.info("Colonnes consultations: %s", list(df_consultations.columns))
 
     # --- Patients
-    df_patients = df_patients.dropna(subset=["patient_id"])
-    df_patients["patient_id"] = df_patients["patient_id"].astype("string")
-    df_patients["birth_date"] = pd.to_datetime(
-        df_patients["birth_date"], errors="coerce"
+
+    # Nettoyage des valeurs non-signifiantes
+
+    df_patients["patient_id"] = (
+        df_patients["patient_id"]
+        .str.strip()         # supprime les espaces
+        .replace("", np.nan) # remplace les chaînes vides par NaN
     )
+
+    df_patients["birth_date"] = df_patients["birth_date"].replace(
+        ["not_a_date", "N/ A"], np.nan
+    )   
+
+    df_patients["gender"] = df_patients["gender"].replace("unknown", np.nan)
+
+    # Typage explicite des colonnes
+
+    # Identifiant patient : chaîne de caractères
+    df_patients["patient_id"] = df_patients["patient_id"].astype("string")
+    # Date de naissance : datetime
+    df_patients["birth_date"] = pd.to_datetime(
+        df_patients["birth_date"]
+    )
+    nb_birth_invalid = df_patients["birth_date"].isna().sum()
+    logging.info("Patients exclus (birth_date invalide): %s", nb_birth_invalid)
+    # Genre : variable catégorielle
     df_patients["gender"] = df_patients["gender"].astype("category")
 
     # --- Consultations
-    df_consultations = df_consultations.dropna(
-        subset=["consultation_id", "patient_id"]
+    
+    # Nettoyage des valeurs non-signifiantes
+
+    df_consultations["consultation_id"] = (
+        df_consultations["consultation_id"]
+        .str.strip()         # supprime les espaces
+        .replace("", np.nan) # remplace les chaînes vides par NaN
     )
+
+    df_consultations["date_consultation"] = df_consultations["date_consultation"].replace(
+        ["not_a_date", "N/ A"], np.nan
+    )
+
+    df_consultations["diagnostic"] = df_consultations["diagnostic"].replace("nnull", np.nan)
+
+    # Typage
+
+    # Identifiant de consultation : chaîne de caractères
     df_consultations["consultation_id"] = df_consultations["consultation_id"].astype("string")
+    # Identifiant patient : chaîne de caractères (clé de jointure)
     df_consultations["patient_id"] = df_consultations["patient_id"].astype("string")
+    # Date de consultation : datetime
     df_consultations["date_consultation"] = pd.to_datetime(
-    df_consultations["date_consultation"],
-    format="%d/%m/%Y",
-    errors="coerce"
+        df_consultations["date_consultation"],
+        format="%d/%m/%Y"
     )
+    nb_date_invalid = df_consultations["date_consultation"].isna().sum()
+    logging.info("Consultations exclues (date invalide): %s", nb_date_invalid)
+    # Diagnostic : variable catégorielle
     df_consultations["diagnostic"] = df_consultations["diagnostic"].astype("category")
 
     logging.info("Nettoyage et typage terminés")
@@ -105,6 +146,7 @@ def main() -> None:
     # ============================================================
     logging.info("Étape 3 - Jointure et analyse")
 
+    # Jointure consultations ↔ patients
     df_joined = df_consultations.merge(
         df_patients[["patient_id"]],
         on="patient_id",
@@ -112,14 +154,18 @@ def main() -> None:
         indicator=True,
     )
 
+    # Indicateur de validité
     df_joined["patient_valide"] = df_joined["_merge"] == "both"
 
+    # Extraire le mois de consultations
     df_joined["mois_consultation"] = (
         df_joined["date_consultation"].dt.to_period("M").astype(str)
     )
 
+    # Calculer la proportion par mois 
     resultat = (
-        df_joined.groupby("mois_consultation")["patient_valide"]
+        df_joined
+        .groupby("mois_consultation")["patient_valide"]
         .mean()
         .reset_index(name="proportion_patient_id_valide")
     )
