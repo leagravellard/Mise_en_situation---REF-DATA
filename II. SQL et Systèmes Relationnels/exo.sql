@@ -38,7 +38,7 @@ LEFT JOIN patients p
    - Grouper par spécialité et année
    - Trier pour lecture
    ======================= */
-WHERE c.status IS NULL OR c.status <> 'cancelled'
+WHERE c.status <> 'cancelled'
 GROUP BY
     pr.specialty_code,
     YEAR(c.consultation_date)
