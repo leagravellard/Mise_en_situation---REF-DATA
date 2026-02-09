@@ -87,8 +87,6 @@ Le notebook n’a pas vocation à être un pipeline final, mais un **support d�
 * Rôle :
 
   * réponse finale à la problématique,
-  * pipeline reproductible et automatisé,
-  * exécution hors notebook,
   * génération de logs et de fichiers de sortie.
 
 Le script est structuré en **4 étapes principales** :
