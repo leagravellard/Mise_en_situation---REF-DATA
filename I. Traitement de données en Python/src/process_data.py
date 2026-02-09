@@ -31,7 +31,7 @@ def setup_logging(log_path: Path) -> None:
 
 def main() -> None:
     # ============================================================
-    # Définition des chemins (robuste même si on lance depuis /src)
+    # Définition des chemins
     # ============================================================
     project_root = Path(__file__).resolve().parents[1]
     inputs_dir = project_root / "inputs"
@@ -102,8 +102,6 @@ def main() -> None:
     df_patients["birth_date"] = pd.to_datetime(
         df_patients["birth_date"]
     )
-    nb_birth_invalid = df_patients["birth_date"].isna().sum()
-    logging.info("Patients exclus (birth_date invalide): %s", nb_birth_invalid)
     # Genre : variable catégorielle
     df_patients["gender"] = df_patients["gender"].astype("category")
 
@@ -112,7 +110,7 @@ def main() -> None:
     # ============================================================
 
     # patient_id -> string
-    # Le champ `patient_id` est un identifiant technique.
+    # Le champ `patient_id` est un identifiant.
     # Il n’est pas destiné à des calculs numériques mais à des comparaisons
     # et des jointures. Le type `string` permet de conserver l’intégrité
     # de l’identifiant (y compris d’éventuels zéros ou caractères
@@ -121,10 +119,7 @@ def main() -> None:
 
     # birth_date -> datetime
     # La date de naissance est convertie en `datetime` afin de permettre
-    # des traitements temporels cohérents (comparaisons de dates,
-    # calculs d’âge, contrôles de validité). Le typage explicite permet
-    # également de détecter et neutraliser les valeurs invalides lors
-    # du parsing.
+    # des traitements temporels cohérents (comparaisons de dates).
 
     # gender -> category
     # La variable `gender` possède un nombre limité de modalités connues.
@@ -160,8 +155,6 @@ def main() -> None:
         df_consultations["date_consultation"],
         format="%d/%m/%Y"
     )
-    nb_date_invalid = df_consultations["date_consultation"].isna().sum()
-    logging.info("Consultations exclues (date invalide): %s", nb_date_invalid)
     # Diagnostic : variable catégorielle
     df_consultations["diagnostic"] = df_consultations["diagnostic"].astype("category")
 
@@ -171,9 +164,11 @@ def main() -> None:
 
     # consultation_id -> string
     # Le champ `consultation_id` est un identifiant unique de consultation.
-    # Il est typé en `string` car il s’agit d’un identifiant métier,
-    # non numérique, utilisé uniquement pour l’identification et non
-    # pour des opérations arithmétiques.
+    # Il n’est pas destiné à des calculs numériques mais à des comparaisons
+    # et des jointures. Le type `string` permet de conserver l’intégrité
+    # de l’identifiant (y compris d’éventuels zéros ou caractères
+    # alphanumériques) et garantit une jointure fiable avec la table
+    # `patients`.
 
     # patient_id -> string
     # Le champ `patient_id` est utilisé comme clé de jointure avec la table
@@ -184,8 +179,7 @@ def main() -> None:
     # date_consultation -> datetime
     # La date de consultation est convertie en `datetime` afin de permettre
     # l’extraction d’informations temporelles (mois, année) nécessaires
-    # à l’analyse. Ce typage explicite garantit également une interprétation
-    # correcte du format de date et l’exclusion des valeurs invalides.
+    # à l’analyse.
 
     # diagnostic -> category
     # Le champ `diagnostic` correspond à un ensemble restreint de statuts
@@ -211,7 +205,7 @@ def main() -> None:
     # Indicateur de validité
     df_joined["patient_valide"] = df_joined["_merge"] == "both"
 
-    # Extraire le mois (sans convertir en string)
+    # Extraire le mois
     df_joined["mois_consultation"] = df_joined["date_consultation"].dt.to_period("M")
 
     # Supprimer les consultations sans mois valide
